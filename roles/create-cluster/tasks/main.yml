@@ -24,7 +24,7 @@
   when: get_clusters.stdout.find('{{ kops_cluster_name }}') == -1
 
 - name: Create the cluster
-  shell: "kops update cluster {{ kops_cluster_name }} --yes --state {{ kops_state_store }}"
+  shell: "kops update cluster --name {{ kops_cluster_name }} --yes --state {{ kops_state_store }}"
 
 - name: Get ELB info
   ec2_elb_info:
@@ -39,7 +39,7 @@
   delay: 30
   when: elb_info.elbs.0.instances_inservice_count >=1
 
-- debug: ELB="{{ elb_info.elbs.0.dns_name }}"
+- debug: msg="ELB:{{ elb_info.elbs }}"
 
 # Below things are not needed. We will do SSH forwarding to avoid this
 # - name: SSH into Bastion
