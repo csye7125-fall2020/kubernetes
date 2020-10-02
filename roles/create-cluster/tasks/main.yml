@@ -1,13 +1,26 @@
 ---
 ## Create K8s cluster with Kops
 
+- name: List availability zones
+  aws_az_info:
+    region: "{{ aws_region }}"
+  register: availability_zones
+  
+# - debug: msg="{{ availability_zones.availability_zones.0.zone_name }}"
+
+- name: Create comma separated AZ list with first n items. n=master_count from group_vars
+  set_fact: 
+    computed_azs: "{{ availability_zones.availability_zones[:master_count] | map(attribute='zone_name') | join(',') }}"
+
+- debug: msg="{{ computed_azs }}"
+
 - name: List clusters
   shell: "kops get clusters --state {{ kops_state_store }}"
   register: get_clusters
-  ignore_errors: yes
+  ignore_errors: yes  # This is needed because above command fails when no cluster is found
 
 - name: Configure the cluster before update
-  shell: "kops create cluster --cloud={{ cloud }} --master-zones={{ zones }} --zones={{ zones }} --node-count={{ node_count }} --topology {{ topology }} --networking {{ networking }} --node-size={{ node_size }} --master-size={{ master_size }} --ssh-public-key={{ ssh_public_key }} --bastion='{{ bastion }}' {{ kops_cluster_name }}"
+  shell: "kops create cluster --cloud={{ cloud }} --master-zones={{ computed_azs }} --zones={{ computed_azs }} --node-count={{ node_count }} --topology {{ topology }} --networking {{ networking }} --node-size={{ node_size }} --master-size={{ master_size }} --ssh-public-key={{ ssh_public_key }} --bastion='{{ bastion }}' {{ kops_cluster_name }}"
   when: get_clusters.stdout.find('{{ kops_cluster_name }}') == -1
 
 - name: Create the cluster
