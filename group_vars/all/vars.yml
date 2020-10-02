@@ -1,0 +1,24 @@
+---
+
+aws_region: us-east-1
+
+# Below three should be set from command line
+kops_cluster_name: k8s.prod.example.com
+kops_state_store: s3://kops-cluster-prod-example-com
+dns_zone: prod.example.com
+
+ssh_public_key: ~/.ssh/id_rsa_kops.pub
+ssh_private_key: ~/.ssh/id_rsa_kops
+
+
+cloud: aws
+zones: us-east-1a,us-east-1b,us-east-1c
+node_count: 3
+master_count: 3
+master_size: t2.micro
+node_size: t2.micro
+bastion: true
+bastion_count: 1
+
+networking: kopeio-vxlan
+topology: private
