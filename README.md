@@ -27,6 +27,10 @@ This project is supported for Linux (Ubuntu 18.04). For other OS like MacOS or W
 
     Create an S3 bucket for storing state of kubernetes cluster. Keep versioning and default encryption enabled. Use this bucket name in below script prefixed by `s3://`
 
+- Route53 DNS Zone
+
+    Create a Route53 public DNS zone for subdomain which is going to be used for this exercise. Replace your subdomain in below shell scripts.
+
 *This playbook installs `kops` and `kubectl` if they're not installed in the system.*
 
 ### Create Cluster
