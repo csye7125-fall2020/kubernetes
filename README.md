@@ -31,7 +31,7 @@ This project is supported for Linux (Ubuntu 18.04). For other OS like MacOS or W
 
     Create a Route53 public DNS zone for subdomain which is going to be used for this exercise. Replace your subdomain in below shell scripts.
 
-*This playbook installs `kops` and `kubectl` if they're not installed in the system.*
+*This playbook installs `kops`, `kubectl`, `boto` and `boto3` packages if they're not installed in the system. These packages are required to run all the tasks but they're installed within the playbook so not mentioned above.*
 
 ### Create Cluster
 
