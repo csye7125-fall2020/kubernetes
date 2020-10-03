@@ -39,7 +39,15 @@
   delay: 30
   when: elb_info.elbs.0.instances_inservice_count >=1
 
-- debug: msg="ELB:{{ elb_info.elbs }}"
+- debug: msg="Bastion ELB:{{ elb_info.elbs | selectattr("dns_name", "match", "^bastion") | map(attribute='dns_name') | list}}"
+
+- name: Show clusters with kops validate
+  shell: kops validate cluster
+  register: kops_clusters
+
+- debug: msg="{{ kops_clusters.stdout }}"
+
+# - debug: msg="ELB:{{ elb_info.elbs }}"
 
 # Below things are not needed. We will do SSH forwarding to avoid this
 # - name: SSH into Bastion
