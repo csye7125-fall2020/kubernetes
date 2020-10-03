@@ -49,7 +49,7 @@ export DNS_ZONE=k8s.prod.example.com
 ANSIBLE_STDOUT_CALLBACK=debug ansible-playbook setup-k8s-cluster.yml --extra-vars "aws_region=${AWS_REGION} kops_cluster_name=${KOPS_CLUSTER_NAME} kops_state_store=${KOPS_STATE_STORE} dns_zone=${DNS_ZONE}"
 ```
 
-**Important**: Make sure to execute the above script with elevated privileges i.e. with `sudo` because the playbook tries to install `boto` and `boto3` packages with `apt` which requires to be executed as root user.
+**Important**: Make sure to execute the above script with elevated privileges i.e. with `sudo` because the playbook tries to install `boto` and `boto3` packages with `apt` which requires to be executed as root user. This is executable file so make sure that execute bit is set. Use `chmod +x setup-k8s-cluster.sh` to make it executable.
 
 At the end of execution, this will give ELB URL for Bastion host. Use that to ssh into Bastion which in turn will be able to access Master an Compute nodes. Make sure the ELB URL has `bastion` prefix.
 
