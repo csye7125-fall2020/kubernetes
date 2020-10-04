@@ -1,0 +1,11 @@
+---
+## Create cluster with kops
+
+- hosts: localhost
+  connection: local
+  roles:
+    - install-kubectl
+    - install-kops
+    - install-boto
+    # - generate-ssh-key-pair
+    - create-cluster
