@@ -7,5 +7,6 @@
     - install-kubectl
     - install-kops
     - install-boto
-    # - generate-ssh-key-pair
+    - generate-ssh-key-pair
     - create-cluster
+    - networking
