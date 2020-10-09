@@ -14,6 +14,21 @@
     multi_ok: no
   register: rds_vpc
 
+- debug: msg="rds_vpc:{{ rds_vpc }}"
+
+
+# Gather information about kubernetes VPC with a tag key Name and value
+- name: Get the kubernetes VPC info
+  ec2_vpc_net_info:
+    filters:
+      "tag:Name": "{{ kops_cluster_name }}"
+  register: k8s_vpc
+
+- debug: msg="k8s_vpc:{{ k8s_vpc }}"
+
+- debug: msg="k8s_vpc_id:{{ k8s_vpc.vpcs[0].vpc_id }}"
+
+
 - name: Create Internet Gateway
   ec2_vpc_igw:
     state: present
@@ -48,10 +63,44 @@
 - debug: msg="rds_vpc_subnets:{{ rds_vpc_subnets }}"
 
 - name: Create subnet list
-  set_fact: 
+  set_fact:
     subnet_id_list: "{{ rds_vpc_subnets.results | map(attribute='subnet.id') | list }}"
 
-- name: Update the route table in the vpc
+- debug: msg="rds_vpc_subnet_id_list:{{ subnet_id_list }}"
+
+- name: Grab the k8s subnets
+  ec2_vpc_subnet_info:
+    profile: "{{ aws_profile }}"
+    region: "{{ aws_region }}"
+    filters:
+      vpc-id: "{{ k8s_vpc.vpcs[0].vpc_id }}"
+  register: k8s_vpc_subnets
+
+- debug: msg="k8s_vpc_subnets:{{ k8s_vpc_subnets }}"
+
+- name: Create k8s subnet list
+  set_fact:
+    k8s_subnet_id_list: "{{ k8s_vpc_subnets.subnets | map(attribute='subnet_id') | list }}"
+
+- name: Grab the k8s route tables
+  ec2_vpc_route_table_facts:
+    profile: "{{ aws_profile }}"
+    region: "{{ aws_region }}"
+    filters:
+      vpc-id: "{{ k8s_vpc.vpcs[0].vpc_id }}"
+  register: k8s_route_table
+
+- name: Gather information about a filtered list of k8s Internet Gateways
+  ec2_vpc_igw_info:
+    profile: "{{ aws_profile }}"
+    region: "{{ aws_region }}"
+    filters:
+        "tag:Name": "{{ kops_cluster_name }}"
+  register: k8s_igw
+
+- debug: msg="k8s_igw:{{ k8s_igw }}"
+
+- name: Update the route table in the rds vpc
   ec2_vpc_route_table:
     state: present
     lookup: id
@@ -61,7 +110,7 @@
     region: "{{ aws_region }}"
     tags:
       Name: "rds_route_table_{{ rds_vpc.vpc.id }}"
-    subnets: "{{ subnet_id_list }}"
+    subnets: "{{ subnet_id_list + k8s_subnet_id_list }}"
     routes:
       - dest: 0.0.0.0/0
         gateway_id: "{{ rds_igw.gateway_id }}"
@@ -108,34 +157,24 @@
     engine_version: "5.7"
     multi_az: no
     port: 3306
-    publicly_accessible: no
+    publicly_accessible: yes
     vpc_security_group_ids: "{{ rds_sg.group_id }}"
-    
+
     # id: webapp-db
     skip_final_snapshot: True
-    
+
     master_user_password: "{{ db_password }}"
     username: "{{ db_username }}"
     password: "{{ db_password }}"
     allocated_storage: "{{ allocated_storage }}"
 
 
-# Gather information about kubernetes VPC with a tag key Name and value
-- name: Get the kubernetes VPC info
-  ec2_vpc_net_info:
-    filters:
-      "tag:Name": "{{ kops_cluster_name }}"
-  register: k8s_vpc
-
-- debug: msg="k8s_vpc:{{ k8s_vpc }}"
-
-- debug: msg="k8s_vpc_id:{{ k8s_vpc.vpcs[0].vpc_id }}"
-
+# VPC peering start
 - name: Create local account VPC peering Connection
   ec2_vpc_peer:
     region: "{{ aws_region }}"
-    vpc_id: "{{ rds_vpc.vpc.id }}"
-    peer_vpc_id: "{{ k8s_vpc.vpcs[0].vpc_id }}"
+    vpc_id: "{{ k8s_vpc.vpcs[0].vpc_id }}"
+    peer_vpc_id: "{{ rds_vpc.vpc.id }}"
     state: present
     tags:
       Name: Peering connection for RDS to K8s
@@ -148,6 +187,42 @@
     state: accept
   register: action_peer
 
+# Exchange subnets
+# - name: Update the route table of rds in the k8s vpc
+#   ec2_vpc_route_table:
+#     state: present
+#     lookup: id
+#     route_table_id: "{{ k8s_route_table.route_tables[0].id }}"
+#     vpc_id: "{{ k8s_vpc.vpcs[0].vpc_id }}"
+#     profile: "{{ aws_profile }}"
+#     region: "{{ aws_region }}"
+#     tags:
+#       Name: "k8s_with_rds_route_table_{{ k8s_vpc.vpcs[0].vpc_id }}"
+#     subnets: "{{ subnet_id_list + k8s_subnet_id_list }}"
+#     routes:
+#       - dest: 0.0.0.0/0
+#         gateway_id: "{{ k8s_igw.internet_gateways[0].internet_gateway_id }}"
+#       # - dest: "{{ vpc_cidr }}"
+#       #   gateway_id: "{{ rds_igw.gateway_id }}"
+#   register: k8s_with_rds_route_table_updated
+
+# - name: Update the route table of k8s in the rds vpc
+#   ec2_vpc_route_table:
+#     state: present
+#     lookup: id
+#     route_table_id: "{{ rds_route_table.route_tables[0].id }}"
+#     vpc_id: "{{ rds_vpc.vpc.id}}"
+#     profile: "{{ aws_profile }}"
+#     region: "{{ aws_region }}"
+#     tags:
+#       Name: "rds_with_k8s_route_table_{{ rds_vpc.vpc.id }}"
+#     subnets: "{{ k8s_subnet_id_list + subnet_id_list }}"
+#     routes:
+#       - dest: 0.0.0.0/0
+#         gateway_id: "{{ rds_igw.gateway_id }}"
+#       # - dest: "{{ k8s_vpc.vpcs[0].cidr_block_association_set[0].cidr_block }}"
+#       #   gateway_id: "{{ k8s_igw.internet_gateways[0].internet_gateway_id }}"
+#   register: rds_with_k8s_route_table_updated
 
 # - name: Check for already running EC2 instances
 #   ec2_instance_info:
@@ -198,7 +273,6 @@
 #     wait: yes
 #     profile: "{{ aws_profile }}"
 #     overwrite: yes
-
 
 # - name: Add instance public IP to host group
 #   add_host: hostname={{ eip }} groups=ec2hosts
