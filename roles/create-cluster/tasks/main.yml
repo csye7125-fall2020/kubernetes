@@ -20,7 +20,20 @@
   ignore_errors: yes  # This is needed because above command fails when no cluster is found
 
 - name: Configure the cluster before update
-  shell: "kops create cluster --cloud={{ cloud }} --master-zones={{ computed_azs }} --zones={{ computed_azs }} --node-count={{ node_count }} --topology {{ topology }} --networking {{ networking }} --node-size={{ node_size }} --master-size={{ master_size }} --ssh-public-key={{ ssh_public_key }} --bastion='{{ bastion }}' --name {{ kops_cluster_name }}"
+  shell: "kops create cluster \
+          --cloud={{ cloud }} \
+          --master-zones={{ computed_azs }} \
+          --zones={{ computed_azs }} \
+          --node-count={{ node_count }} \
+          --topology {{ topology }} \
+          --networking {{ networking }} \
+          --node-size={{ node_size }} \
+          --master-size={{ master_size }} \
+          --master-volume-size={{ master_volume_size }} \
+          --node-volume-size={{ node_volume_size }} \
+          --ssh-public-key={{ ssh_public_key }} \
+          --bastion='{{ bastion }}' \
+          --name {{ kops_cluster_name }}"
   when: get_clusters.stdout.find('{{ kops_cluster_name }}') == -1
 
 - name: Create the cluster
@@ -37,13 +50,18 @@
   until: cmd_result.stdout.find('{{ node_count + master_count }}') != -1
   retries: 30
   delay: 30
-  when: elb_info.elbs.0.instances_inservice_count >=1
+  when: elb_info.elbs.0.instances_inservice_count >= 1 or elb_info.elbs.0.instances_outofservice_count >= 1
 
 - debug: msg="Bastion ELB:{{ elb_info.elbs | selectattr("dns_name", "match", "^bastion") | map(attribute='dns_name') | list}}"
+
+# Pause for 1 minute for cluster to be healthy.
+- pause:
+    minutes: 1
 
 - name: Show clusters with kops validate
   shell: kops validate cluster
   register: kops_clusters
+  ignore_errors: yes
 
 - debug: msg="{{ kops_clusters.stdout }}"
 

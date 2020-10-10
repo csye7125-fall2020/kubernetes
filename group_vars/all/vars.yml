@@ -1,5 +1,6 @@
 ---
 
+aws_profile: prod
 aws_region: us-east-1
 
 # Below three should be set from command line
@@ -17,8 +18,18 @@ node_count: 3
 master_count: 3
 master_size: t2.micro
 node_size: t2.micro
+master_volume_size: 10
+node_volume_size: 20
 bastion: true
 bastion_count: 1
 
 networking: kopeio-vxlan
 topology: private
+
+# RDS
+db_subnet_group: rds-subnet-group
+db_identifier: webapp-rds-instance
+db_name: webappdb
+db_username: webapp
+db_password: Asdf#12345$
+allocated_storage: 20
