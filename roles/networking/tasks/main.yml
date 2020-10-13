@@ -88,6 +88,7 @@
     region: "{{ aws_region }}"
     filters:
       vpc-id: "{{ k8s_vpc.vpcs[0].vpc_id }}"
+      "tag:Name": "{{ kops_cluster_name }}"
   register: k8s_route_table
 
 - name: Gather information about a filtered list of k8s Internet Gateways
@@ -95,79 +96,10 @@
     profile: "{{ aws_profile }}"
     region: "{{ aws_region }}"
     filters:
-        "tag:Name": "{{ kops_cluster_name }}"
+      "tag:Name": "{{ kops_cluster_name }}"
   register: k8s_igw
 
 - debug: msg="k8s_igw:{{ k8s_igw }}"
-
-- name: Update the route table in the rds vpc
-  ec2_vpc_route_table:
-    state: present
-    lookup: id
-    route_table_id: "{{ rds_route_table.route_tables[0].id }}"
-    vpc_id: "{{ rds_vpc.vpc.id}}"
-    profile: "{{ aws_profile }}"
-    region: "{{ aws_region }}"
-    tags:
-      Name: "rds_route_table_{{ rds_vpc.vpc.id }}"
-    subnets: "{{ subnet_id_list + k8s_subnet_id_list }}"
-    routes:
-      - dest: 0.0.0.0/0
-        gateway_id: "{{ rds_igw.gateway_id }}"
-  register: rds_route_table_updated
-
-- name: Create vpc security groups
-  ec2_group:
-    state: present
-    profile: "{{ aws_profile }}"
-    region: "{{ aws_region }}"
-    vpc_id: "{{ rds_vpc.vpc.id }}"
-    name: "rds_sg_{{ rds_vpc.vpc.id }}"
-    description: "rds security group for {{ rds_vpc.vpc.id }}"
-    rules:
-      - proto: tcp
-        from_port: 3306
-        to_port: 3306
-        cidr_ip: 0.0.0.0/0
-    tags:
-      Name: "rds_sg"
-  register: rds_sg
-
-- name: Create RDS DB subnet group
-  rds_subnet_group:
-    state: present
-    name: "{{ db_subnet_group }}"
-    description: Subnet group for RDS instance
-    subnets: "{{ subnet_id_list }}"
-
-- name: Check boto3 version
-  raw: "pip list boto | grep boto"
-
-- debug: msg="rds_sg.group_id:{{ rds_sg.group_id }}"
-
-- name: Create RDS DB instance
-  rds_instance:
-    state: present
-    db_instance_class: db.t2.micro
-    db_instance_identifier: "{{ db_identifier }}"
-    db_name: "{{ db_name }}"
-    # db_security_groups: "{{ rds_sg.group_id }}"
-    db_subnet_group_name: "{{ db_subnet_group }}"
-    engine: mysql
-    engine_version: "5.7"
-    multi_az: no
-    port: 3306
-    publicly_accessible: yes
-    vpc_security_group_ids: "{{ rds_sg.group_id }}"
-
-    # id: webapp-db
-    skip_final_snapshot: True
-
-    master_user_password: "{{ db_password }}"
-    username: "{{ db_username }}"
-    password: "{{ db_password }}"
-    allocated_storage: "{{ allocated_storage }}"
-
 
 # VPC peering start
 - name: Create local account VPC peering Connection
@@ -187,24 +119,122 @@
     state: accept
   register: action_peer
 
-# Exchange subnets
-# - name: Update the route table of rds in the k8s vpc
-#   ec2_vpc_route_table:
+- name: Update the route table in the rds vpc
+  ec2_vpc_route_table:
+    state: present
+    lookup: id
+    route_table_id: "{{ rds_route_table.route_tables[0].id }}"
+    vpc_id: "{{ rds_vpc.vpc.id}}"
+    profile: "{{ aws_profile }}"
+    region: "{{ aws_region }}"
+    # tags:
+    #   Name: "rds_route_table_{{ rds_vpc.vpc.id }}"
+    # subnets: "{{ subnet_id_list + k8s_subnet_id_list }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ rds_igw.gateway_id }}"
+      - dest: "{{ k8s_vpc.vpcs[0].cidr_block }}"
+        vpc_peering_connection_id: "{{ vpc_peer.peering_id }}"
+  register: rds_route_table_updated
+  
+  
+# Route table entry in k8s
+- name: Update the route table of rds in the k8s vpc
+  ec2_vpc_route_table:
+    state: present
+    lookup: id
+    route_table_id: "{{ k8s_route_table.route_tables[0].id }}"
+    vpc_id: "{{ k8s_vpc.vpcs[0].vpc_id }}"
+    profile: "{{ aws_profile }}"
+    region: "{{ aws_region }}"
+    # tags:
+    #   Name: "k8s_with_rds_route_table_{{ k8s_vpc.vpcs[0].vpc_id }}"
+    # subnets: "{{ subnet_id_list + k8s_subnet_id_list }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ k8s_igw.internet_gateways[0].internet_gateway_id }}"
+      - dest: "{{ rds_vpc.vpc.cidr_block }}"
+        vpc_peering_connection_id: "{{ vpc_peer.peering_id }}"
+  register: k8s_with_rds_route_table_updated
+
+- name: Create vpc security groups
+  ec2_group:
+    state: present
+    profile: "{{ aws_profile }}"
+    region: "{{ aws_region }}"
+    vpc_id: "{{ rds_vpc.vpc.id }}"
+    name: "rds_sg_{{ rds_vpc.vpc.id }}"
+    description: "rds security group for {{ rds_vpc.vpc.id }}"
+    rules:
+      - proto: tcp
+        from_port: 3306
+        to_port: 3306
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 3306
+        to_port: 3306
+        cidr_ip: "{{ k8s_vpc.vpcs[0].cidr_block }}"
+    tags:
+      Name: "rds_sg"
+  register: rds_sg
+
+# - name: Create k8s vpc security groups
+#   ec2_group:
 #     state: present
-#     lookup: id
-#     route_table_id: "{{ k8s_route_table.route_tables[0].id }}"
-#     vpc_id: "{{ k8s_vpc.vpcs[0].vpc_id }}"
 #     profile: "{{ aws_profile }}"
 #     region: "{{ aws_region }}"
+#     vpc_id: "{{ k8s_vpc.vpcs[0].vpc_id }}"
+#     name: "rds_sg_{{ k8s_vpc.vpcs[0].vpc_id }}"
+#     description: "rds security group for {{ k8s_vpc.vpcs[0].vpc_id }}"
+#     rules:
+#       - proto: tcp
+#         from_port: 3306
+#         to_port: 3306
+#         cidr_ip: 0.0.0.0/0
 #     tags:
-#       Name: "k8s_with_rds_route_table_{{ k8s_vpc.vpcs[0].vpc_id }}"
-#     subnets: "{{ subnet_id_list + k8s_subnet_id_list }}"
-#     routes:
-#       - dest: 0.0.0.0/0
-#         gateway_id: "{{ k8s_igw.internet_gateways[0].internet_gateway_id }}"
-#       # - dest: "{{ vpc_cidr }}"
-#       #   gateway_id: "{{ rds_igw.gateway_id }}"
-#   register: k8s_with_rds_route_table_updated
+#       Name: "k8s_sg"
+#   register: k8s_sg
+
+- name: Create RDS DB subnet group
+  rds_subnet_group:
+    state: present
+    name: "{{ db_subnet_group }}"
+    description: Subnet group for RDS instance
+    subnets: "{{ subnet_id_list }}"
+
+- name: Check boto3 version
+  raw: "pip list boto | grep boto"
+
+- debug: msg="rds_sg.group_id:{{ rds_sg.group_id }}"
+
+# - name: Create list of two group ids
+#   set_fact:
+#     rds_vpc_security_groups:
+#       - "{{ rds_sg.group_id }}"
+#       - "{{ k8s_sg.group_id }}"
+
+- name: Create RDS DB instance
+  rds_instance:
+    state: present
+    db_instance_class: db.t2.micro
+    db_instance_identifier: "{{ db_identifier }}"
+    db_name: "{{ db_name }}"
+    # db_security_groups: "{{ rds_sg.group_id }}"
+    db_subnet_group_name: "{{ db_subnet_group }}"
+    engine: mysql
+    engine_version: "5.7"
+    multi_az: no
+    port: 3306
+    publicly_accessible: no
+    vpc_security_group_ids: "{{ rds_sg.group_id }}"
+
+    # id: webapp-db
+    skip_final_snapshot: True
+
+    master_user_password: "{{ db_password }}"
+    username: "{{ db_username }}"
+    password: "{{ db_password }}"
+    allocated_storage: "{{ allocated_storage }}"
 
 # - name: Update the route table of k8s in the rds vpc
 #   ec2_vpc_route_table:
