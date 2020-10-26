@@ -3,6 +3,7 @@
 
 - hosts: localhost
   connection: local
+  gather_facts: true
   roles:
     - install-kubectl
     - install-kops
@@ -10,3 +11,11 @@
     - generate-ssh-key-pair
     - create-cluster
     - networking
+
+- hosts: ec2bastion
+  user: ubuntu
+  vars:
+    ansible_ssh_private_key_file: "{{ ssh_private_key }}"
+  gather_facts: true
+  roles:
+    - create-db-from-bastion

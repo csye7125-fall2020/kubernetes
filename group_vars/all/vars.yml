@@ -29,7 +29,10 @@ topology: private
 # RDS
 db_subnet_group: rds-subnet-group
 db_identifier: webapp-rds-instance
-db_name: webappdb
-db_username: webapp
+db_name: csye7125_webapp
+db_username: csye7125_user
 db_password: Asdf#12345$
 allocated_storage: 20
+
+poller_db_name: csye7125_poller
+notifier_db_name: csye7125_notifier
