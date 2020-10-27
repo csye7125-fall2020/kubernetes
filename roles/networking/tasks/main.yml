@@ -235,6 +235,13 @@
     username: "{{ db_username }}"
     password: "{{ db_password }}"
     allocated_storage: "{{ allocated_storage }}"
+  register: rds_inst
+
+- name: Set fact of rds host name
+  set_fact:
+    rds_endpoint_address: "{{ rds_inst.endpoint.address }}"
+
+- debug: msg="rds_endpoint_address:{{ rds_endpoint_address }}"
 
 # - name: Update the route table of k8s in the rds vpc
 #   ec2_vpc_route_table:
