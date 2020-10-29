@@ -227,10 +227,7 @@
     port: 3306
     publicly_accessible: no
     vpc_security_group_ids: "{{ rds_sg.group_id }}"
-
-    # id: webapp-db
     skip_final_snapshot: True
-
     master_user_password: "{{ db_password }}"
     username: "{{ db_username }}"
     password: "{{ db_password }}"
@@ -253,10 +250,7 @@
     port: 3306
     publicly_accessible: no
     vpc_security_group_ids: "{{ rds_sg.group_id }}"
-
-    # id: webapp-db
     skip_final_snapshot: True
-
     master_user_password: "{{ db_password }}"
     username: "{{ db_username }}"
     password: "{{ db_password }}"
@@ -279,10 +273,7 @@
     port: 3306
     publicly_accessible: no
     vpc_security_group_ids: "{{ rds_sg.group_id }}"
-
-    # id: webapp-db
     skip_final_snapshot: True
-
     master_user_password: "{{ db_password }}"
     username: "{{ db_username }}"
     password: "{{ db_password }}"
