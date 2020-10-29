@@ -35,12 +35,84 @@
   register: deleted_peer
   ignore_errors: true
 
-- name: Terminate RDS Instance
-  rds_instance:
+- debug: msg="db_identifier:{{ db_identifier }}"
+
+- rds_instance_info:
     db_instance_identifier: "{{ db_identifier }}"
+  register: webapp_rds_instance
+
+# - name: Terminate Webapp RDS Instance
+#   rds_instance:
+#     db_instance_identifier: "{{ db_identifier }}"
+#     state: absent
+#     skip_final_snapshot: True
+#   register: rds_inst_webapp_teardown
+#   ignore_errors: true
+#   async: 600
+#   poll: 0
+
+- name: Terminate Webapp RDS Instance
+  command: >
+    aws rds delete-db-instance --db-instance-identifier {{ db_identifier }} --skip-final-snapshot
+  register: rds_inst_webapp_teardown
+  ignore_errors: true
+
+# - debug: msg="rds_inst_webapp_teardown:{{ rds_inst_webapp_teardown }}"
+
+# - name: Terminate Poller RDS Instance
+#   rds_instance:
+#     db_instance_identifier: "{{ poller_db_identifier }}"
+#     state: absent
+#     skip_final_snapshot: True
+#   register: rds_inst_poller_teardown
+#   ignore_errors: true
+#   async: 1000
+#   poll: 0
+
+- name: Terminate Poller RDS Instance
+  command: >
+    aws rds delete-db-instance --db-instance-identifier {{ poller_db_identifier }} --skip-final-snapshot
+  register: rds_inst_poller_teardown
+  ignore_errors: true
+
+- name: Terminate Notifier RDS Instance
+  rds_instance:
+    db_instance_identifier: "{{ notifier_db_identifier }}"
     state: absent
     skip_final_snapshot: True
+  register: rds_inst_notifier_teardown
   ignore_errors: true
+  # async: 1000
+  # poll: 0
+
+# Async wait for RDS instance teardown
+# - name: 'rds_inst_webapp teardown - check on async task'
+#   async_status:
+#     jid: "{{ rds_inst_webapp_teardown.ansible_job_id }}"
+#   register: job_result_webapp_teardown
+#   until: rds_inst_webapp_teardown.finished
+#   retries: 20
+#   delay: 30
+
+# - name: 'rds_inst_poller teardown - check on async task'
+#   async_status:
+#     jid: "{{ rds_inst_poller_teardown.ansible_job_id }}"
+#   register: job_result_poller_teardown
+#   until: rds_inst_poller_teardown.finished
+#   retries: 20
+#   delay: 30
+
+# - name: 'rds_inst_notifier teardown - check on async task'
+#   async_status:
+#     jid: "{{ rds_inst_notifier_teardown.ansible_job_id }}"
+#   register: job_result_notifier_teardown
+#   until: rds_inst_notifier_teardown.finished
+#   retries: 20
+#   delay: 30
+
+# Pause for 1 minute in case any RDS instance is still being deleted.
+- pause:
+    minutes: 1
 
 - name: Terminate RDS subnet group
   rds_subnet_group:
