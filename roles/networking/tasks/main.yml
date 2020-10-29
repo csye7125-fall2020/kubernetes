@@ -213,7 +213,7 @@
 #       - "{{ rds_sg.group_id }}"
 #       - "{{ k8s_sg.group_id }}"
 
-- name: Create RDS DB instance
+- name: Create Webapp RDS DB instance
   rds_instance:
     state: present
     db_instance_class: db.t2.micro
@@ -235,13 +235,106 @@
     username: "{{ db_username }}"
     password: "{{ db_password }}"
     allocated_storage: "{{ allocated_storage }}"
-  register: rds_inst
+  async: 1200
+  poll: 0
+  register: rds_inst_webapp
 
-- name: Set fact of rds host name
+- name: Create Poller RDS DB instance
+  rds_instance:
+    state: present
+    db_instance_class: db.t2.micro
+    db_instance_identifier: "{{ poller_db_identifier }}"
+    db_name: "{{ poller_db_name }}"
+    # db_security_groups: "{{ rds_sg.group_id }}"
+    db_subnet_group_name: "{{ db_subnet_group }}"
+    engine: mysql
+    engine_version: "5.7"
+    multi_az: no
+    port: 3306
+    publicly_accessible: no
+    vpc_security_group_ids: "{{ rds_sg.group_id }}"
+
+    # id: webapp-db
+    skip_final_snapshot: True
+
+    master_user_password: "{{ db_password }}"
+    username: "{{ db_username }}"
+    password: "{{ db_password }}"
+    allocated_storage: "{{ allocated_storage }}"
+  async: 1200
+  poll: 0
+  register: rds_inst_poller
+
+- name: Create Notifier RDS DB instance
+  rds_instance:
+    state: present
+    db_instance_class: db.t2.micro
+    db_instance_identifier: "{{ notifier_db_identifier }}"
+    db_name: "{{ notifier_db_name }}"
+    # db_security_groups: "{{ rds_sg.group_id }}"
+    db_subnet_group_name: "{{ db_subnet_group }}"
+    engine: mysql
+    engine_version: "5.7"
+    multi_az: no
+    port: 3306
+    publicly_accessible: no
+    vpc_security_group_ids: "{{ rds_sg.group_id }}"
+
+    # id: webapp-db
+    skip_final_snapshot: True
+
+    master_user_password: "{{ db_password }}"
+    username: "{{ db_username }}"
+    password: "{{ db_password }}"
+    allocated_storage: "{{ allocated_storage }}"
+  async: 1200
+  poll: 0
+  register: rds_inst_notifier
+
+
+- name: 'rds_inst_webapp - check on async task'
+  async_status:
+    jid: "{{ rds_inst_webapp.ansible_job_id }}"
+  register: job_result_webapp
+  until: job_result_webapp.finished
+  retries: 40
+  delay: 30
+
+- name: 'rds_inst_poller - check on async task'
+  async_status:
+    jid: "{{ rds_inst_poller.ansible_job_id }}"
+  register: job_result_poller
+  until: job_result_poller.finished
+  retries: 40
+  delay: 30
+
+- name: 'rds_inst_notifier - check on async task'
+  async_status:
+    jid: "{{ rds_inst_notifier.ansible_job_id }}"
+  register: job_result_notifier
+  until: job_result_notifier.finished
+  retries: 40
+  delay: 30
+
+# - debug: msg="job_result_webapp:{{ job_result_webapp }}"
+
+- name: Set fact of webapp rds host name
   set_fact:
-    rds_endpoint_address: "{{ rds_inst.endpoint.address }}"
+    rds_endpoint_address_webapp: "{{ job_result_webapp.endpoint.address }}"
 
-- debug: msg="rds_endpoint_address:{{ rds_endpoint_address }}"
+- debug: msg="rds_endpoint_address_webapp:{{ rds_endpoint_address_webapp }}"
+
+- name: Set fact of poller rds host name
+  set_fact:
+    rds_endpoint_address_poller: "{{ job_result_poller.endpoint.address }}"
+
+- debug: msg="rds_endpoint_address_poler:{{ rds_endpoint_address_poller }}"
+
+- name: Set fact of notifier rds host name
+  set_fact:
+    rds_endpoint_address_notifier: "{{ job_result_notifier.endpoint.address }}"
+
+- debug: msg="rds_endpoint_address_notifier:{{ rds_endpoint_address_notifier }}"
 
 # - name: Update the route table of k8s in the rds vpc
 #   ec2_vpc_route_table:

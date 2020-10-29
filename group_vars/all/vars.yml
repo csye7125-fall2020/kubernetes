@@ -34,5 +34,8 @@ db_username: csye7125_user
 db_password: Asdf#12345$
 allocated_storage: 20
 
+poller_db_identifier: poller-rds-instance
 poller_db_name: csye7125_poller
+
+notifier_db_identifier: notifier-rds-instance
 notifier_db_name: csye7125_notifier

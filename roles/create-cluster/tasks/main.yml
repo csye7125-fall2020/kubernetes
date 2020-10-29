@@ -82,5 +82,5 @@
 - name: Add bastion ELB to host group
   add_host: hostname="{{ (elb_info.elbs | selectattr("dns_name", "match", "^bastion") | map(attribute='dns_name') | list)[0] }}" groups=ec2bastion
 
-- name: Wait for ssh to come up in bastion
-  wait_for: host="{{ (elb_info.elbs | selectattr("dns_name", "match", "^bastion") | map(attribute='dns_name') | list)[0] }}" port=22 delay=10 timeout=300
+# - name: Wait for ssh to come up in bastion
+#   wait_for: host="{{ (elb_info.elbs | selectattr("dns_name", "match", "^bastion") | map(attribute='dns_name') | list)[0] }}" port=22 delay=10 timeout=300
