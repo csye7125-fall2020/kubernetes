@@ -5,4 +5,4 @@
   connection: local
   roles:
     - networking_teardown
-    # - delete-cluster
+    - delete-cluster

@@ -14,10 +14,10 @@ ssh_private_key: ~/.ssh/id_rsa_kops
 
 cloud: aws
 zones: us-east-1a,us-east-1b,us-east-1c
-node_count: 3
+node_count: 5
 master_count: 3
 master_size: t2.medium
-node_size: t2.xlarge
+node_size: t2.medium
 master_volume_size: 10
 node_volume_size: 100
 bastion: true
