@@ -6,13 +6,13 @@
   # ignore_errors: yes
 
 # kubectl top nodes
-- name: Show top nodes
-  shell: "kubectl top nodes"
+# - name: Show top nodes
+#   shell: "kubectl top nodes"
   # register: top_nodes
 
 # - debug: msg="{{ kops_clusters.stdout }}"
 
 # kubectl top pods
-- name: Apply metrics server yaml
-  shell: "kubectl top pods"
+# - name: Apply metrics server yaml
+  # shell: "kubectl top pods"
   # register: top_pods
