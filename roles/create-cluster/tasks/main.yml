@@ -36,6 +36,14 @@
           --name {{ kops_cluster_name }}"
   when: get_clusters.stdout.find('{{ kops_cluster_name }}') == -1
 
+# Setting authenticationTokenWebhook specs for metrics server
+- name: Setting authenticationTokenWebhook specs
+  shell: "KOPS_FEATURE_FLAGS=SpecOverrideFlag kops set cluster --name={{ kops_cluster_name }} spec.kubelet.authenticationTokenWebhook=true --state {{ kops_state_store }}"
+
+# Setting authorizationMode specs for metrics server
+- name: Setting authorizationMode specs
+  shell: "KOPS_FEATURE_FLAGS=SpecOverrideFlag kops set cluster --name={{ kops_cluster_name }} spec.kubelet.authorizationMode=Webhook --state {{ kops_state_store }}"
+
 - name: Create the cluster
   shell: "kops update cluster --name {{ kops_cluster_name }} --yes --state {{ kops_state_store }}"
 
@@ -64,6 +72,12 @@
   ignore_errors: yes
 
 - debug: msg="{{ kops_clusters.stdout }}"
+
+# kubectl apply metrics server yaml
+
+# kubectl top nodes
+
+# kubectl top pods
 
 # - debug: msg="ELB:{{ elb_info.elbs }}"
 

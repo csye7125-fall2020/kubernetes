@@ -14,12 +14,12 @@ ssh_private_key: ~/.ssh/id_rsa_kops
 
 cloud: aws
 zones: us-east-1a,us-east-1b,us-east-1c
-node_count: 3
+node_count: 5
 master_count: 3
-master_size: t2.micro
-node_size: t2.micro
+master_size: t2.medium
+node_size: t2.medium
 master_volume_size: 10
-node_volume_size: 20
+node_volume_size: 100
 bastion: true
 bastion_count: 1
 
@@ -39,3 +39,6 @@ poller_db_name: csye7125_poller
 
 notifier_db_identifier: notifier-rds-instance
 notifier_db_name: csye7125_notifier
+
+# metrics server
+metrics_server_file_path: "test_path"

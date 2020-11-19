@@ -10,6 +10,7 @@
     - install-boto
     - generate-ssh-key-pair
     - create-cluster
+    - metrics-server
     - networking
 
 # - hosts: ec2bastion
