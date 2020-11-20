@@ -42,3 +42,6 @@ notifier_db_name: csye7125_notifier
 
 # metrics server
 metrics_server_file_path: "test_path"
+
+email: "me@example.com"
+sub_domain_name: "webapp"
