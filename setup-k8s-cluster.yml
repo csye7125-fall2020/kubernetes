@@ -11,6 +11,7 @@
     - generate-ssh-key-pair
     - create-cluster
     - metrics-server
+    - ingress-controller-tls
     - networking
 
 # - hosts: ec2bastion
