@@ -12,7 +12,8 @@
     - create-cluster
     - metrics-server
     - ingress-controller-tls
-    - networking
+    - cluster-autoscaler
+#    - networking
 
 # - hosts: ec2bastion
 #   user: ubuntu
