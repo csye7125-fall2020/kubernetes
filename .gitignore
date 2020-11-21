@@ -1,2 +1,4 @@
 # Shell scripts with sensitive info
 *.sh
+/.idea/
+/cluster-autoscaler-one-asg.yaml
