@@ -1,6 +1,4 @@
 # Shell scripts with sensitive info
 *.sh
 /.idea/
-/metric_server_components.yaml
 /cluster-autoscaler-one-asg.yaml
-/autoscale-aws-policy.json
