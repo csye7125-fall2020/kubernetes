@@ -2,3 +2,5 @@
 *.sh
 /.idea/
 /cluster-autoscaler-one-asg.yaml
+
+/tmp/values.yml

@@ -44,8 +44,25 @@
 - name: Setting authorizationMode specs
   shell: "KOPS_FEATURE_FLAGS=SpecOverrideFlag kops set cluster --name={{ kops_cluster_name }} spec.kubelet.authorizationMode=Webhook --state {{ kops_state_store }}"
 
+- name: Generate template file
+  shell:
+    kops toolbox template \
+    --values ./tmp/values.yml \
+    --template ./tmp/updateIG.yml \
+    --output ./tmp/igConfig.yml
+
+- name: Change Instance Group Configuration
+  shell:
+    kops replace -f ./tmp/igConfig.yml --state {{ kops_state_store }}
+
+# - name: Edit Instance group maxsize
+#   shell: "EDITOR='./roles/create-cluster/templates/yq-merge-editor.sh roles/create-cluster/templates/spec.yml' kops edit instancegroups nodes --state {{ kops_state_store }} --name {{ kops_cluster_name }}"
+
 - name: Create the cluster
   shell: "kops update cluster --name {{ kops_cluster_name }} --yes --state {{ kops_state_store }}"
+
+- name: Rolling Update Cluster
+  shell: "kops rolling-update cluster --name {{ kops_cluster_name }} --yes --fail-on-validate-error="false" --state {{ kops_state_store }}"
 
 - name: Get ELB info
   ec2_elb_info:
