@@ -42,7 +42,11 @@ notifier_db_name: csye7125_notifier
 
 # metrics server
 metrics_server_file_path: "test_path"
+
+# cluster autoscaling
 cluster_autoscaler_file_path: "test_path"
+
+# aws policy json
 policy_json: "test_json"
 
 email: "me@example.com"

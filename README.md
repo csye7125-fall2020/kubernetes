@@ -46,8 +46,11 @@ export KOPS_CLUSTER_NAME=k8s.prod.example.com
 export KOPS_STATE_STORE=s3://kops-cluster-prod-example-com
 export DNS_ZONE=k8s.prod.example.com
 export SSH_PRIVATE_KEY=~/.ssh/id_rsa_kops
+export METRICS_SERVER_FILE_PATH=/path/to/metrics/server/yaml
+export SUB_DOMAIN_NAME=webapp
+export EMAIL=me@example.com
 
-ANSIBLE_STDOUT_CALLBACK=debug ansible-playbook setup-k8s-cluster.yml --extra-vars "aws_region=${AWS_REGION} kops_cluster_name=${KOPS_CLUSTER_NAME} kops_state_store=${KOPS_STATE_STORE} dns_zone=${DNS_ZONE} ssh_private_key=${SSH_PRIVATE_KEY}"
+ANSIBLE_STDOUT_CALLBACK=debug ansible-playbook setup-k8s-cluster.yml --extra-vars "aws_region=${AWS_REGION} kops_cluster_name=${KOPS_CLUSTER_NAME} kops_state_store=${KOPS_STATE_STORE} dns_zone=${DNS_ZONE} ssh_private_key=${SSH_PRIVATE_KEY} metrics_server_file_path=${METRICS_SERVER_FILE_PATH} email=${EMAIL} sub_domain_name=${SUB_DOMAIN_NAME}"
 ```
 
 **Important**: Make sure to execute the above script with elevated privileges i.e. with `sudo` because the playbook tries to install `boto` and `boto3` packages with `apt` which requires to be executed as root user. This is executable file so make sure that execute bit is set. Use `chmod +x setup-k8s-cluster.sh` to make it executable.
