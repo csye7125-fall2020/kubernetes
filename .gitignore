@@ -4,3 +4,4 @@
 /cluster-autoscaler-one-asg.yaml
 
 /tmp/values.yml
+/tmp/updateIG.yml

@@ -17,7 +17,7 @@ zones: us-east-1a,us-east-1b,us-east-1c
 node_count: 3
 master_count: 3
 master_size: t2.medium
-node_size: t2.medium
+node_size: t2.large
 master_volume_size: 10
 node_volume_size: 50
 bastion: true

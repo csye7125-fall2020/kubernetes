@@ -61,9 +61,6 @@
 - name: Create the cluster
   shell: "kops update cluster --name {{ kops_cluster_name }} --yes --state {{ kops_state_store }}"
 
-- name: Rolling Update Cluster
-  shell: "kops rolling-update cluster --name {{ kops_cluster_name }} --yes --fail-on-validate-error="false" --state {{ kops_state_store }}"
-
 - name: Get ELB info
   ec2_elb_info:
     region: "{{ aws_region }}"
@@ -115,3 +112,6 @@
 
 # - name: Wait for ssh to come up in bastion
 #   wait_for: host="{{ (elb_info.elbs | selectattr("dns_name", "match", "^bastion") | map(attribute='dns_name') | list)[0] }}" port=22 delay=10 timeout=300
+
+- name: Rolling Update Cluster
+  shell: "kops rolling-update cluster --name {{ kops_cluster_name }} --yes --fail-on-validate-error='false' --state {{ kops_state_store }}"
