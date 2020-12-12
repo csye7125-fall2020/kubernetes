@@ -87,6 +87,9 @@
 
 - debug: msg="{{ kops_clusters.stdout }}"
 
+- name: Rolling Update Cluster
+  shell: "kops rolling-update cluster --name {{ kops_cluster_name }} --yes --fail-on-validate-error=\"false\" --state {{ kops_state_store }}"
+
 # kubectl apply metrics server yaml
 
 # kubectl top nodes
